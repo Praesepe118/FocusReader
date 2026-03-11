@@ -5,9 +5,11 @@ import {
   AlignJustify, 
   MoveHorizontal, 
   Trash2, 
-  X 
+  X,
+  LogOut
 } from 'lucide-react';
 import { useReaderStore } from '../../store/useReaderStore';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -26,11 +28,18 @@ export const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
     reset
   } = useReaderStore();
 
+  const { signOut } = useAuthStore();
+
   const handleReset = () => {
     if (window.confirm('确定要清空所有内容并返回首页吗？此操作无法撤销。')) {
       reset();
       onClose();
     }
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    onClose();
   };
 
   return (
@@ -170,13 +179,20 @@ export const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
         </div>
 
         {/* Danger Zone - Fixed at bottom */}
-        <div className="pt-6 mt-4 border-t border-stone-100 flex-none relative z-10">
+        <div className="pt-6 mt-4 border-t border-stone-100 flex-none relative z-10 space-y-3">
           <button
             onClick={handleReset}
             className="w-full py-3 px-4 bg-white text-stone-500 hover:text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border border-stone-200 hover:border-red-100 group shadow-sm cursor-pointer"
           >
             <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
             清空内容并重置
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full py-3 px-4 bg-white text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border border-stone-200 group shadow-sm cursor-pointer"
+          >
+            <LogOut size={16} className="group-hover:scale-110 transition-transform" />
+            退出登录
           </button>
         </div>
       </motion.div>

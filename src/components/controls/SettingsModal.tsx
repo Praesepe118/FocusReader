@@ -7,9 +7,15 @@ import {
   Trash2, 
   X,
   RotateCcw,
-  PenTool
+  PenTool,
+  LogOut,
+  Star,
+  Eye,
+  FileText,
+  Infinity as InfinityIcon
 } from 'lucide-react';
 import { useReaderStore } from '../../store/useReaderStore';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -28,8 +34,18 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setLinesPerPage,
     showNotes,
     toggleShowNotes,
+    showReadStar,
+    toggleShowReadStar,
+    browseMode,
+    toggleBrowseMode,
+    globalNoteMode,
+    toggleGlobalNoteMode,
+    infiniteScrollMode,
+    toggleInfiniteScrollMode,
     reset
   } = useReaderStore();
+  
+  const { signOut } = useAuthStore();
 
   const [confirmingReset, setConfirmingReset] = React.useState(false);
 
@@ -42,6 +58,11 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       // Auto-reset confirmation state after 3 seconds if not clicked
       setTimeout(() => setConfirmingReset(false), 3000);
     }
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    onClose();
   };
 
   return (
@@ -145,25 +166,48 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </div>
                 </section>
 
-                {/* Lines Per Page */}
+                {/* Infinite Scroll Mode Toggle */}
                 <section>
-                  <div className="flex justify-between mb-3">
-                    <label className="text-sm font-medium text-stone-600">每页行数</label>
-                    <span className="text-xs font-mono bg-stone-100 px-2 py-1 rounded text-stone-500">{linesPerPage} 行</span>
+                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                    <div className="flex items-center gap-3">
+                      <InfinityIcon size={16} className="text-stone-400" />
+                      <span className="text-sm font-medium text-stone-600">无限滚动模式</span>
+                    </div>
+                    <button
+                      onClick={toggleInfiniteScrollMode}
+                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        infiniteScrollMode ? 'bg-stone-700' : 'bg-stone-200'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        infiniteScrollMode ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
                   </div>
-                  <div className="bg-stone-50 p-3 rounded-xl border border-stone-100">
-                    <input
-                      type="range"
-                      min="1"
-                      max="20"
-                      step="1"
-                      value={linesPerPage}
-                      onChange={(e) => setLinesPerPage(Number(e.target.value))}
-                      className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-stone-600"
-                    />
-                  </div>
-                  <p className="text-xs text-stone-400 mt-2 font-light px-1">减少每页行数有助于减轻阅读压力。</p>
+                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，所有内容将在同一页显示，无需翻页。</p>
                 </section>
+
+                {/* Lines Per Page */}
+                {!infiniteScrollMode && (
+                  <section>
+                    <div className="flex justify-between mb-3">
+                      <label className="text-sm font-medium text-stone-600">每页行数</label>
+                      <span className="text-xs font-mono bg-stone-100 px-2 py-1 rounded text-stone-500">{linesPerPage} 行</span>
+                    </div>
+                    <div className="bg-stone-50 p-3 rounded-xl border border-stone-100">
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        step="1"
+                        value={linesPerPage}
+                        onChange={(e) => setLinesPerPage(Number(e.target.value))}
+                        className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-stone-600"
+                      />
+                    </div>
+                    <p className="text-xs text-stone-400 mt-2 font-light px-1">减少每页行数有助于减轻阅读压力。</p>
+                  </section>
+                )}
 
                 {/* Show Notes Toggle */}
                 <section>
@@ -185,10 +229,75 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </div>
                   <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，鼠标悬浮在行右侧即可输入随笔。</p>
                 </section>
+
+                {/* Global Note Mode Toggle */}
+                {showNotes && (
+                  <section>
+                    <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                      <div className="flex items-center gap-3">
+                        <FileText size={16} className="text-stone-400" />
+                        <span className="text-sm font-medium text-stone-600">无极笔记模式</span>
+                      </div>
+                      <button
+                        onClick={toggleGlobalNoteMode}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          globalNoteMode ? 'bg-stone-700' : 'bg-stone-200'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          globalNoteMode ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，笔记不再按行分割，而是作为全局笔记显示在右侧。</p>
+                  </section>
+                )}
+
+                {/* Browse Mode Toggle */}
+                <section>
+                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                    <div className="flex items-center gap-3">
+                      <Eye size={16} className="text-stone-400" />
+                      <span className="text-sm font-medium text-stone-600">浏览模式</span>
+                    </div>
+                    <button
+                      onClick={toggleBrowseMode}
+                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        browseMode ? 'bg-stone-700' : 'bg-stone-200'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        browseMode ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，正文将始终显示为黑色，不再需要鼠标悬浮。</p>
+                </section>
+
+                {/* Show Read Star Toggle */}
+                <section>
+                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                    <div className="flex items-center gap-3">
+                      <Star size={16} className="text-stone-400" />
+                      <span className="text-sm font-medium text-stone-600">显示已读标记</span>
+                    </div>
+                    <button
+                      onClick={toggleShowReadStar}
+                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        showReadStar ? 'bg-stone-700' : 'bg-stone-200'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        showReadStar ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，已读的行左侧会显示四角星标记。</p>
+                </section>
               </div>
 
               {/* Footer / Danger Zone */}
-              <div className="p-6 border-t border-stone-100 bg-stone-50/50">
+              <div className="p-6 border-t border-stone-100 bg-stone-50/50 space-y-3">
                 <button
                   onClick={handleReset}
                   className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border shadow-sm cursor-pointer active:scale-[0.98] ${
@@ -197,8 +306,15 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       : "bg-white text-stone-500 hover:text-red-500 hover:bg-red-50 border-stone-200 hover:border-red-100"
                   }`}
                 >
-                  <Trash2 size={16} className={confirmingReset ? "animate-pulse" : "group-hover:scale-110 transition-transform"} />
-                  {confirmingReset ? "确定要清空吗？再次点击确认" : "清空内容并重置"}
+                  <RotateCcw size={16} className={confirmingReset ? "animate-spin" : "group-hover:-rotate-90 transition-transform"} />
+                  {confirmingReset ? "确定要返回主页吗？" : "返回主页 (关闭当前阅读)"}
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full py-3 px-4 bg-white text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm cursor-pointer active:scale-[0.98]"
+                >
+                  <LogOut size={16} className="group-hover:scale-110 transition-transform" />
+                  退出登录
                 </button>
               </div>
             </motion.div>

@@ -23,7 +23,10 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
     markLineAsRead,
     toggleLineRead,
     updateLineNote,
-    showNotes
+    showNotes,
+    showReadStar,
+    browseMode,
+    globalNoteMode
   } = useReaderStore();
 
   const { isSidebarPinned, toggleLineSelection, selectedLineIds } = useAIStore();
@@ -111,20 +114,22 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
         </div>
 
         {/* Read Indicator Star */}
-        <div className="flex items-center justify-center w-4">
-            <button
-                onClick={(e) => { e.stopPropagation(); toggleLineRead(line.id); }}
-                className={cn(
-                    "transition-all duration-300 transform",
-                    line.isRead 
-                        ? "text-amber-400 scale-100 opacity-100" 
-                        : "text-stone-200 scale-0 opacity-0 group-hover:scale-75 group-hover:opacity-50 hover:!scale-100 hover:!opacity-100 hover:!text-amber-300"
-                )}
-                title={line.isRead ? "已读 (点击取消)" : "未读"}
-            >
-              <FourPointStar size={14} fill={line.isRead ? "currentColor" : "none"} strokeWidth={2} />
-            </button>
-        </div>
+        {showReadStar && (
+          <div className="flex items-center justify-center w-4">
+              <button
+                  onClick={(e) => { e.stopPropagation(); toggleLineRead(line.id); }}
+                  className={cn(
+                      "transition-all duration-300 transform",
+                      line.isRead 
+                          ? "text-amber-400 scale-100 opacity-100" 
+                          : "text-stone-200 scale-0 opacity-0 group-hover:scale-75 group-hover:opacity-50 hover:!scale-100 hover:!opacity-100 hover:!text-amber-300"
+                  )}
+                  title={line.isRead ? "已读 (点击取消)" : "未读"}
+              >
+                <FourPointStar size={14} fill={line.isRead ? "currentColor" : "none"} strokeWidth={2} />
+              </button>
+          </div>
+        )}
       </div>
 
       {/* Center Column: Text */}
@@ -133,7 +138,7 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
           className={cn(
             "transition-colors duration-300 font-sans tracking-wide leading-relaxed cursor-default text-center",
             // Default grey, hover black.
-            line.isConfusing ? "text-amber-800/80" : (line.isHighlighted ? "text-emerald-800/80" : "text-stone-300 hover:text-stone-900")
+            line.isConfusing ? "text-amber-800/80" : (line.isHighlighted ? "text-emerald-800/80" : (browseMode ? "text-stone-900" : "text-stone-300 hover:text-stone-900"))
           )}
           style={{
             fontSize: fontSize,
@@ -150,30 +155,32 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
       </div>
 
       {/* Right Column: Note Input */}
-      <div 
-        className={cn(
-          "pl-4 pt-1 transition-all duration-500 h-full flex items-start group/note",
-          showNotes ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10 pointer-events-none"
-        )}
-      >
-        <textarea
-          value={line.note || ''}
-          onChange={(e) => updateLineNote(line.id, e.target.value)}
-          onFocus={() => setCurrentLineIndex(globalIndex)}
-          placeholder="随笔..."
+      {!globalNoteMode && (
+        <div 
           className={cn(
-            "w-full bg-transparent border-none resize-none outline-none p-0",
-            "font-hand text-stone-500 text-sm leading-relaxed",
-            "placeholder:text-stone-200/0 focus:placeholder:text-stone-200/50 group-hover/note:placeholder:text-stone-200/50", // Placeholder visible on hover/focus
-            "opacity-0 group-hover/note:opacity-100 focus:opacity-100 transition-opacity duration-300"
+            "pl-4 pt-1 transition-all duration-500 h-full flex items-start group/note",
+            showNotes ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10 pointer-events-none"
           )}
-          style={{
-             opacity: line.note ? 1 : undefined // If note exists, stay visible.
-          }}
-          rows={Math.max(2, Math.ceil(line.text.length / 20))}
-          spellCheck={false}
-        />
-      </div>
+        >
+          <textarea
+            value={line.note || ''}
+            onChange={(e) => updateLineNote(line.id, e.target.value)}
+            onFocus={() => setCurrentLineIndex(globalIndex)}
+            placeholder="随笔..."
+            className={cn(
+              "w-full bg-transparent border-none resize-none outline-none p-0",
+              "font-hand text-stone-500 text-sm leading-relaxed",
+              "placeholder:text-stone-200/0 focus:placeholder:text-stone-200/50 group-hover/note:placeholder:text-stone-200/50", // Placeholder visible on hover/focus
+              "opacity-0 group-hover/note:opacity-100 focus:opacity-100 transition-opacity duration-300"
+            )}
+            style={{
+               opacity: line.note ? 1 : undefined // If note exists, stay visible.
+            }}
+            rows={Math.max(2, Math.ceil(line.text.length / 20))}
+            spellCheck={false}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };

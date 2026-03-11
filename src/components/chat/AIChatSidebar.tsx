@@ -34,7 +34,7 @@ export const AIChatSidebar = () => {
         <div 
             className={cn(
                 "absolute top-4 -right-10 bg-white border border-stone-200 rounded-r-lg p-2 cursor-pointer shadow-sm text-stone-400 hover:text-stone-600 transition-all",
-                isSidebarPinned ? "text-amber-600 bg-amber-50 border-amber-200" : ""
+                isSidebarPinned ? "text-stone-600 bg-stone-100 border-stone-300" : ""
             )}
             onClick={toggleSidebarPin}
             title={isSidebarPinned ? "取消固定" : "固定侧边栏"}

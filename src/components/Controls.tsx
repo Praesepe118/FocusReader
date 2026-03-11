@@ -6,14 +6,19 @@ import {
   Download
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useReaderStore } from '../store/useReaderStore';
+import { FullScreenToggle } from './reader/FullScreenToggle';
 
 export const Controls = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isExportOpen, setIsExportOpen] = React.useState(false);
+  const { isFocusModeActive } = useReaderStore();
 
   return (
     <>
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+        {!isFocusModeActive && <FullScreenToggle />}
+        
         <motion.button
           className="p-4 bg-white/80 backdrop-blur-md text-stone-600 rounded-full shadow-lg shadow-stone-200/50 border border-white/60 hover:bg-white transition-all cursor-pointer"
           whileHover={{ scale: 1.05 }}

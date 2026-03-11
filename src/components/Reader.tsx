@@ -15,6 +15,13 @@ export const Reader = () => {
     currentLineIndex, 
     setCurrentLineIndex, 
     linesPerPage, 
+    reset,
+    showNotes,
+    globalNoteMode,
+    globalNote,
+    setGlobalNote,
+    infiniteScrollMode,
+    isFocusModeActive
   } = useReaderStore();
 
   const [isNotesOpen, setIsNotesOpen] = React.useState(false);
@@ -22,10 +29,10 @@ export const Reader = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate pagination
-  const currentPage = Math.floor(currentLineIndex / linesPerPage);
-  const startLineIndex = currentPage * linesPerPage;
-  const endLineIndex = startLineIndex + linesPerPage;
-  const visibleLines = lines.slice(startLineIndex, endLineIndex);
+  const currentPage = infiniteScrollMode ? 0 : Math.floor(currentLineIndex / linesPerPage);
+  const startLineIndex = infiniteScrollMode ? 0 : currentPage * linesPerPage;
+  const endLineIndex = infiniteScrollMode ? lines.length : startLineIndex + linesPerPage;
+  const visibleLines = infiniteScrollMode ? lines : lines.slice(startLineIndex, endLineIndex);
 
   // Track page changes for animation
   const prevPageRef = useRef(currentPage);
@@ -40,14 +47,19 @@ export const Reader = () => {
   }, [currentPage]);
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (!infiniteScrollMode && containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-  }, [currentPage]);
+  }, [currentPage, infiniteScrollMode]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input/textarea
+      const activeElement = document.activeElement;
+      const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      if (isInput) return;
+
       if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault();
         if (currentLineIndex < lines.length - 1) {
@@ -60,22 +72,32 @@ export const Reader = () => {
         }
       } else if (e.key === 'ArrowRight') {
          e.preventDefault();
-         const nextPageStart = (currentPage + 1) * linesPerPage;
-         if (nextPageStart < lines.length) {
-            setCurrentLineIndex(nextPageStart);
+         if (infiniteScrollMode) {
+            const nextIndex = Math.min(lines.length - 1, currentLineIndex + linesPerPage);
+            setCurrentLineIndex(nextIndex);
+         } else {
+            const nextPageStart = (currentPage + 1) * linesPerPage;
+            if (nextPageStart < lines.length) {
+               setCurrentLineIndex(nextPageStart);
+            }
          }
       } else if (e.key === 'ArrowLeft') {
          e.preventDefault();
-         const prevPageStart = (currentPage - 1) * linesPerPage;
-         if (prevPageStart >= 0) {
-            setCurrentLineIndex(prevPageStart);
+         if (infiniteScrollMode) {
+            const prevIndex = Math.max(0, currentLineIndex - linesPerPage);
+            setCurrentLineIndex(prevIndex);
+         } else {
+            const prevPageStart = (currentPage - 1) * linesPerPage;
+            if (prevPageStart >= 0) {
+               setCurrentLineIndex(prevPageStart);
+            }
          }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentLineIndex, lines.length, setCurrentLineIndex, currentPage, linesPerPage]);
+  }, [currentLineIndex, lines.length, setCurrentLineIndex, currentPage, linesPerPage, infiniteScrollMode]);
 
   if (lines.length === 0) return null;
 
@@ -84,9 +106,9 @@ export const Reader = () => {
       {/* Main Content Area */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-4 py-8 scroll-smooth no-scrollbar transition-all duration-300"
+        className="flex-1 overflow-y-auto px-4 py-8 pt-20 scroll-smooth no-scrollbar transition-all duration-300"
       >
-        <div className="w-full min-h-[60vh] pb-32">
+        <div className="w-full min-h-[60vh] pb-32 relative">
           <AnimatePresence mode='wait'>
             <motion.div
               key={currentPage}
@@ -94,7 +116,7 @@ export const Reader = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="space-y-8"
+              className="space-y-8 relative z-0"
             >
               {visibleLines.map((line, index) => {
                 const globalIndex = startLineIndex + index;
@@ -111,9 +133,28 @@ export const Reader = () => {
               })}
             </motion.div>
           </AnimatePresence>
+
+          {/* Global Note Area Overlay */}
+          {showNotes && globalNoteMode && (
+            <div className="absolute inset-0 pointer-events-none z-10">
+              <div className="grid grid-cols-[1fr_minmax(auto,65ch)_1fr] gap-4 w-full max-w-[1600px] mx-auto h-full">
+                <div /> {/* Left padding column */}
+                <div /> {/* Center content column */}
+                <div className="pl-4 pt-1 pointer-events-auto h-full group/global-note">
+                  <textarea
+                    value={globalNote}
+                    onChange={(e) => setGlobalNote(e.target.value)}
+                    placeholder=""
+                    className="w-full h-full bg-transparent border-none resize-none outline-none p-0 font-hand text-stone-500 text-sm leading-relaxed placeholder:text-transparent focus:placeholder:text-stone-200/50 group-hover/global-note:placeholder:text-stone-200/50 transition-colors"
+                    spellCheck={false}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
-        <ReaderPagination />
+        {!infiniteScrollMode && <ReaderPagination />}
         
         <div className="h-24" />
       </div>
