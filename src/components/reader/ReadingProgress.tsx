@@ -128,8 +128,8 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
               </div>
 
               {/* Stats & Controls */}
-              <div className="flex items-center justify-between w-full text-xs font-serif text-stone-500 relative">
-                  <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between w-full text-xs font-serif text-stone-500 relative gap-4">
+                  <div className="flex flex-wrap items-center justify-center gap-4">
                       <span><span className="font-mono text-stone-800 text-sm">{readChars}</span> 字</span>
                       <span><span className="font-mono text-stone-800 text-sm">{Math.round(progress)}%</span> 完成</span>
                       <span className="flex items-center gap-1 text-stone-400">
@@ -138,7 +138,7 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
                       </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                       {/* Focus Mode Control */}
                       <button
                           onClick={() => !isFocusModeActive && setShowFocusSetup(true)}

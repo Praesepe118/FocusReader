@@ -33,14 +33,14 @@ export const FullScreenToggle = ({ className }: { className?: string }) => {
     <motion.button
       onClick={toggleFullscreen}
       className={cn(
-        "p-4 bg-white/80 backdrop-blur-md text-stone-600 rounded-full shadow-lg shadow-stone-200/50 border border-white/60 hover:bg-white transition-all cursor-pointer",
+        "p-3 md:p-4 bg-white/80 backdrop-blur-md text-stone-600 rounded-full shadow-lg shadow-stone-200/50 border border-white/60 hover:bg-white transition-all cursor-pointer",
         className
       )}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       title={isFullscreen ? "退出全屏" : "全屏模式"}
     >
-      {isFullscreen ? <Minimize size={22} strokeWidth={1.5} /> : <Maximize size={22} strokeWidth={1.5} />}
+      {isFullscreen ? <Minimize size={20} className="md:w-[22px] md:h-[22px]" strokeWidth={1.5} /> : <Maximize size={20} className="md:w-[22px] md:h-[22px]" strokeWidth={1.5} />}
     </motion.button>
   );
 };

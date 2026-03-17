@@ -30,6 +30,10 @@ interface ReaderState {
   globalNoteMode: boolean;
   globalNote: string;
   infiniteScrollMode: boolean;
+  mobileMode: boolean;
+  smartFontSize: boolean;
+  mobileNavVisible: boolean;
+  isNotesReviewOpen: boolean;
   
   // Actions
   setCurrentBookId: (id: string | null) => void;
@@ -48,6 +52,11 @@ interface ReaderState {
   toggleGlobalNoteMode: () => void;
   setGlobalNote: (note: string) => void;
   toggleInfiniteScrollMode: () => void;
+  toggleMobileMode: () => void;
+  toggleSmartFontSize: () => void;
+  setMobileMode: (isMobile: boolean) => void;
+  setMobileNavVisible: (visible: boolean) => void;
+  setIsNotesReviewOpen: (isOpen: boolean) => void;
   
   // Interaction Actions
   toggleLineRead: (id: string) => void;
@@ -97,6 +106,10 @@ export const useReaderStore = create<ReaderState>()(
       globalNoteMode: false,
       globalNote: '',
       infiniteScrollMode: false,
+      mobileMode: false,
+      smartFontSize: false,
+      mobileNavVisible: false,
+      isNotesReviewOpen: false,
       
       timerEndTime: null,
       timerStartTime: null,
@@ -133,6 +146,11 @@ export const useReaderStore = create<ReaderState>()(
       toggleGlobalNoteMode: () => set((state) => ({ globalNoteMode: !state.globalNoteMode })),
       setGlobalNote: (note) => set({ globalNote: note }),
       toggleInfiniteScrollMode: () => set((state) => ({ infiniteScrollMode: !state.infiniteScrollMode })),
+      toggleMobileMode: () => set((state) => ({ mobileMode: !state.mobileMode })),
+      toggleSmartFontSize: () => set((state) => ({ smartFontSize: !state.smartFontSize })),
+      setMobileMode: (isMobile) => set({ mobileMode: isMobile }),
+      setMobileNavVisible: (visible) => set({ mobileNavVisible: visible }),
+      setIsNotesReviewOpen: (isOpen) => set({ isNotesReviewOpen: isOpen }),
       
       toggleLineRead: (id) => set((state) => ({
         lines: state.lines.map(l => l.id === id ? { ...l, isRead: !l.isRead } : l)
@@ -212,7 +230,7 @@ export const useReaderStore = create<ReaderState>()(
       }
     }),
     {
-      name: 'focus-reader-storage-v5', // Changed key to v5 to ensure new settings are initialized
+      name: 'focus-reader-storage-v7', // Changed key to v7 to ensure new settings are initialized
       storage: createJSONStorage(() => localStorage),
       version: 1,
     }

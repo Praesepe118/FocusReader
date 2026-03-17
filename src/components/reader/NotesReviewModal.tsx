@@ -9,10 +9,18 @@ interface NotesReviewModalProps {
 }
 
 export const NotesReviewModal = ({ isOpen, onClose }: NotesReviewModalProps) => {
-  const { lines, updateLineNote, setCurrentLineIndex } = useReaderStore();
+  const { lines, currentLineIndex, updateLineNote, setCurrentLineIndex } = useReaderStore();
   
   // Filter lines that have notes
-  const notes = lines.filter(line => line.note && line.note.trim().length > 0);
+  const existingNotes = lines.filter(line => line.note && line.note.trim().length > 0);
+  
+  // Include current line if it doesn't have a note
+  const currentLine = lines[currentLineIndex];
+  const hasCurrentLineNote = currentLine?.note && currentLine.note.trim().length > 0;
+  
+  const notes = hasCurrentLineNote 
+    ? existingNotes 
+    : [currentLine, ...existingNotes].filter(Boolean);
 
   return (
     <AnimatePresence>
@@ -34,10 +42,10 @@ export const NotesReviewModal = ({ isOpen, onClose }: NotesReviewModalProps) => 
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-4xl h-full max-h-[80vh] bg-[#fafaf9] shadow-2xl rounded-2xl border border-white/60 overflow-hidden pointer-events-auto flex flex-col relative"
+              className="w-full max-w-4xl h-full max-h-[80vh] bg-stone-100/80 backdrop-blur-2xl shadow-2xl rounded-2xl border border-white/60 overflow-hidden pointer-events-auto flex flex-col relative"
             >
               {/* Header */}
-              <div className="flex justify-between items-center p-8 border-b border-stone-200/50 bg-white/50 backdrop-blur-md">
+              <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/40 backdrop-blur-md">
                 <div>
                     <h2 className="text-2xl font-serif italic text-stone-800 flex items-center gap-3">
                     <Edit3 size={24} className="text-stone-400" />
@@ -56,7 +64,7 @@ export const NotesReviewModal = ({ isOpen, onClose }: NotesReviewModalProps) => 
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth bg-[#fafaf9]">
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 scroll-smooth">
                 {notes.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-stone-300 space-y-4">
                         <Edit3 size={48} strokeWidth={1} />
@@ -70,7 +78,7 @@ export const NotesReviewModal = ({ isOpen, onClose }: NotesReviewModalProps) => 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group bg-white p-6 rounded-xl shadow-sm border border-stone-100 hover:shadow-md transition-all duration-300"
+                                className="group bg-white/60 backdrop-blur-md p-6 rounded-xl shadow-sm border border-white/50 hover:bg-white/80 hover:shadow-md transition-all duration-300"
                             >
                                 {/* Original Text Context */}
                                 <div className="flex gap-4 mb-4">
@@ -95,10 +103,11 @@ export const NotesReviewModal = ({ isOpen, onClose }: NotesReviewModalProps) => 
                                 <div className="pl-8 relative">
                                     <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-stone-200" />
                                     <textarea
-                                        value={line.note}
+                                        value={line.note || ''}
                                         onChange={(e) => updateLineNote(line.id, e.target.value)}
                                         className="w-full bg-transparent border-none resize-none outline-none p-0 font-hand text-stone-700 text-base leading-relaxed"
-                                        rows={Math.max(2, Math.ceil(line.note.length / 30))}
+                                        rows={Math.max(2, Math.ceil((line.note || '').length / 30))}
+                                        placeholder="在这里写下你的想法..."
                                     />
                                 </div>
                             </motion.div>

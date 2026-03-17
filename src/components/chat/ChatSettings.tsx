@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAIStore, AIConfig } from '../../store/useAIStore';
-import { X, Save, RefreshCw, Plus, Trash2, Check } from 'lucide-react';
+import { X, Save, RefreshCw, Plus, Trash2, Check, ArrowLeft } from 'lucide-react';
 import { fetchModels } from '../../lib/aiService';
 import { cn } from '../../lib/utils';
+import { useReaderStore } from '../../store/useReaderStore';
 
 export const ChatSettings = () => {
   const { 
@@ -12,8 +13,10 @@ export const ChatSettings = () => {
     updateConfig, 
     removeConfig, 
     setCurrentConfigId,
-    toggleSettings 
+    toggleSettings,
+    setSidebarOpen
   } = useAIStore();
+  const { mobileMode } = useReaderStore();
 
   const [editingConfig, setEditingConfig] = useState<Partial<AIConfig>>({
     name: 'New Config',
@@ -79,10 +82,19 @@ export const ChatSettings = () => {
     <div className="flex flex-col h-full bg-stone-50 text-stone-700">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-stone-200">
-        <h2 className="text-lg font-serif font-medium">AI 设置</h2>
-        <button onClick={toggleSettings} className="p-1 hover:bg-stone-200 rounded-full transition-colors">
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggleSettings} className="p-1 hover:bg-stone-200 rounded-full transition-colors" title="返回">
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="text-lg font-serif font-medium">AI 设置</h2>
+        </div>
+        <div className="flex gap-2">
+          {mobileMode && (
+            <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-stone-200 rounded-full transition-colors" title="关闭">
+              <X size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">

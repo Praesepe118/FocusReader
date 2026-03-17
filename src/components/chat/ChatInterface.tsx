@@ -412,6 +412,11 @@ ${lines.filter(l => l.note).map(l => `- Line ${lines.indexOf(l)+1}: ${l.note}`).
             <button onClick={toggleSettings} className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors" title="设置">
                 <MessageSquare size={16} />
             </button>
+            {useReaderStore.getState().mobileMode && (
+              <button onClick={() => useAIStore.getState().setSidebarOpen(false)} className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors" title="关闭">
+                  <X size={16} />
+              </button>
+            )}
          </div>
        </div>
 
@@ -447,12 +452,12 @@ ${lines.filter(l => l.note).map(l => `- Line ${lines.indexOf(l)+1}: ${l.note}`).
                                 </div>
                             </div>
                         ) : (
-                            <div className="prose prose-stone prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-stone-50 prose-pre:border prose-pre:border-stone-200">
+                            <div className="prose prose-stone prose-sm max-w-full overflow-hidden break-words prose-p:leading-relaxed prose-pre:bg-stone-50 prose-pre:border prose-pre:border-stone-200 prose-pre:overflow-x-auto prose-pre:max-w-full">
                                 <Markdown 
                                     remarkPlugins={[remarkGfm]}
                                     components={{
                                         code({node, className, children, ...props}) {
-                                            return <code className={cn("bg-stone-100 px-1.5 py-0.5 rounded-md text-[13px] font-mono text-stone-600", className)} {...props}>{children}</code>
+                                            return <code className={cn("bg-stone-100 px-1.5 py-0.5 rounded-md text-[13px] font-mono text-stone-600 break-words whitespace-pre-wrap", className)} {...props}>{children}</code>
                                         }
                                     }}
                                 >

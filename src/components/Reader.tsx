@@ -8,6 +8,7 @@ import { PageTurnEffect } from './reader/PageTurnEffect';
 import { NotesReviewModal } from './reader/NotesReviewModal';
 import { ZenTimer } from './ZenTimer';
 import { AIChatSidebar } from './chat/AIChatSidebar';
+import { cn } from '../lib/utils';
 
 export const Reader = () => {
   const { 
@@ -21,18 +22,21 @@ export const Reader = () => {
     globalNote,
     setGlobalNote,
     infiniteScrollMode,
-    isFocusModeActive
+    isFocusModeActive,
+    mobileMode,
+    setMobileNavVisible,
+    isNotesReviewOpen,
+    setIsNotesReviewOpen
   } = useReaderStore();
-
-  const [isNotesOpen, setIsNotesOpen] = React.useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate pagination
-  const currentPage = infiniteScrollMode ? 0 : Math.floor(currentLineIndex / linesPerPage);
-  const startLineIndex = infiniteScrollMode ? 0 : currentPage * linesPerPage;
-  const endLineIndex = infiniteScrollMode ? lines.length : startLineIndex + linesPerPage;
-  const visibleLines = infiniteScrollMode ? lines : lines.slice(startLineIndex, endLineIndex);
+  const effectiveLinesPerPage = mobileMode ? 1 : linesPerPage;
+  const currentPage = infiniteScrollMode && !mobileMode ? 0 : Math.floor(currentLineIndex / effectiveLinesPerPage);
+  const startLineIndex = infiniteScrollMode && !mobileMode ? 0 : currentPage * effectiveLinesPerPage;
+  const endLineIndex = infiniteScrollMode && !mobileMode ? lines.length : startLineIndex + effectiveLinesPerPage;
+  const visibleLines = infiniteScrollMode && !mobileMode ? lines : lines.slice(startLineIndex, endLineIndex);
 
   // Track page changes for animation
   const prevPageRef = useRef(currentPage);
@@ -47,10 +51,10 @@ export const Reader = () => {
   }, [currentPage]);
 
   useEffect(() => {
-    if (!infiniteScrollMode && containerRef.current) {
+    if ((!infiniteScrollMode || mobileMode) && containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-  }, [currentPage, infiniteScrollMode]);
+  }, [currentPage, infiniteScrollMode, mobileMode]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -72,22 +76,22 @@ export const Reader = () => {
         }
       } else if (e.key === 'ArrowRight') {
          e.preventDefault();
-         if (infiniteScrollMode) {
-            const nextIndex = Math.min(lines.length - 1, currentLineIndex + linesPerPage);
+         if (infiniteScrollMode && !mobileMode) {
+            const nextIndex = Math.min(lines.length - 1, currentLineIndex + effectiveLinesPerPage);
             setCurrentLineIndex(nextIndex);
          } else {
-            const nextPageStart = (currentPage + 1) * linesPerPage;
+            const nextPageStart = (currentPage + 1) * effectiveLinesPerPage;
             if (nextPageStart < lines.length) {
                setCurrentLineIndex(nextPageStart);
             }
          }
       } else if (e.key === 'ArrowLeft') {
          e.preventDefault();
-         if (infiniteScrollMode) {
-            const prevIndex = Math.max(0, currentLineIndex - linesPerPage);
+         if (infiniteScrollMode && !mobileMode) {
+            const prevIndex = Math.max(0, currentLineIndex - effectiveLinesPerPage);
             setCurrentLineIndex(prevIndex);
          } else {
-            const prevPageStart = (currentPage - 1) * linesPerPage;
+            const prevPageStart = (currentPage - 1) * effectiveLinesPerPage;
             if (prevPageStart >= 0) {
                setCurrentLineIndex(prevPageStart);
             }
@@ -97,26 +101,125 @@ export const Reader = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentLineIndex, lines.length, setCurrentLineIndex, currentPage, linesPerPage, infiniteScrollMode]);
+  }, [currentLineIndex, lines.length, setCurrentLineIndex, currentPage, effectiveLinesPerPage, infiniteScrollMode, mobileMode]);
+
+  // Touch navigation for mobile mode
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null || !mobileMode) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = touchStartX.current - touchEndX;
+    const diffY = touchStartY.current - touchEndY;
+    
+    // Check if it's a tap in the bottom third
+    if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+      const screenHeight = window.innerHeight;
+      if (touchEndY > screenHeight * (2/3)) {
+        setMobileNavVisible(true);
+      } else {
+        setMobileNavVisible(false);
+      }
+    } else {
+      setMobileNavVisible(false);
+    }
+
+    // Swipe left (next)
+    if (diffX > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      // Mark current line as read before moving to next
+      const currentLine = lines[currentLineIndex];
+      if (currentLine && !currentLine.isRead) {
+        useReaderStore.getState().toggleLineRead(currentLine.id);
+      }
+
+      const nextPageStart = (currentPage + 1) * effectiveLinesPerPage;
+      if (nextPageStart < lines.length) {
+         setCurrentLineIndex(nextPageStart);
+      }
+    } 
+    // Swipe right (prev)
+    else if (diffX < -50 && Math.abs(diffX) > Math.abs(diffY)) {
+      const prevPageStart = (currentPage - 1) * effectiveLinesPerPage;
+      if (prevPageStart >= 0) {
+         setCurrentLineIndex(prevPageStart);
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // Ignore clicks on interactive elements like buttons
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input') || (e.target as HTMLElement).closest('textarea') || (e.target as HTMLElement).closest('.group')) {
+      return;
+    }
+
+    // Ignore if text is selected
+    if (window.getSelection()?.toString()) {
+      return;
+    }
+
+    const screenWidth = window.innerWidth;
+    const clickX = e.clientX;
+
+    if (clickX < screenWidth * 0.25) {
+      // Clicked left 25%
+      const prevPageStart = (currentPage - 1) * effectiveLinesPerPage;
+      if (prevPageStart >= 0) {
+         setCurrentLineIndex(prevPageStart);
+      }
+    } else if (clickX > screenWidth * 0.75) {
+      // Clicked right 25%
+      // Mark current line as read before moving to next
+      const currentLine = lines[currentLineIndex];
+      if (currentLine && !currentLine.isRead) {
+        useReaderStore.getState().toggleLineRead(currentLine.id);
+      }
+
+      const nextPageStart = (currentPage + 1) * effectiveLinesPerPage;
+      if (nextPageStart < lines.length) {
+         setCurrentLineIndex(nextPageStart);
+      }
+    }
+  };
 
   if (lines.length === 0) return null;
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden bg-stone-50/30">
+    <div 
+      className="flex flex-col h-full relative overflow-hidden bg-stone-50/30"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onClick={handleContainerClick}
+    >
       {/* Main Content Area */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-4 py-8 pt-20 scroll-smooth no-scrollbar transition-all duration-300"
+        className={cn(
+          "flex-1 overflow-y-auto px-4 scroll-smooth no-scrollbar transition-all duration-300 flex flex-col",
+          mobileMode ? "py-4" : "py-8 pt-20"
+        )}
       >
-        <div className="w-full min-h-[60vh] pb-32 relative">
+        <div className={cn(
+          "w-full relative flex-1 flex flex-col",
+          mobileMode ? "justify-center items-center min-h-[60vh]" : "min-h-[60vh] pb-32"
+        )}>
           <AnimatePresence mode='wait'>
             <motion.div
               key={currentPage}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: mobileMode ? 10 : 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: mobileMode ? -10 : 0 }}
               transition={{ duration: 0.3 }}
-              className="space-y-8 relative z-0"
+              className={cn(
+                "relative z-0 w-full",
+                mobileMode ? "max-w-lg text-center my-auto" : "space-y-8"
+              )}
             >
               {visibleLines.map((line, index) => {
                 const globalIndex = startLineIndex + index;
@@ -135,7 +238,7 @@ export const Reader = () => {
           </AnimatePresence>
 
           {/* Global Note Area Overlay */}
-          {showNotes && globalNoteMode && (
+          {showNotes && globalNoteMode && !mobileMode && (
             <div className="absolute inset-0 pointer-events-none z-10">
               <div className="grid grid-cols-[1fr_minmax(auto,65ch)_1fr] gap-4 w-full max-w-[1600px] mx-auto h-full">
                 <div /> {/* Left padding column */}
@@ -154,14 +257,14 @@ export const Reader = () => {
           )}
         </div>
         
-        {!infiniteScrollMode && <ReaderPagination />}
+        {(!infiniteScrollMode || mobileMode) && <ReaderPagination />}
         
-        <div className="h-24" />
+        {!mobileMode && <div className="h-24" />}
       </div>
 
-      <ReadingProgress onOpenNotes={() => setIsNotesOpen(true)} />
+      <ReadingProgress onOpenNotes={() => setIsNotesReviewOpen(true)} />
       <PageTurnEffect trigger={pageTurnTrigger} />
-      <NotesReviewModal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
+      <NotesReviewModal isOpen={isNotesReviewOpen} onClose={() => setIsNotesReviewOpen(false)} />
       <ZenTimer />
       <AIChatSidebar />
     </div>

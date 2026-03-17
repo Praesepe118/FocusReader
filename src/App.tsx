@@ -17,6 +17,8 @@ export default function App() {
   const currentBookId = useReaderStore((state) => state.currentBookId);
   const isFocusModeActive = useReaderStore((state) => state.isFocusModeActive);
   const setCurrentBookId = useReaderStore((state) => state.setCurrentBookId);
+  const setMobileMode = useReaderStore((state) => state.setMobileMode);
+  const mobileMode = useReaderStore((state) => state.mobileMode);
   
   const session = useAuthStore((state) => state.session);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -33,6 +35,16 @@ export default function App() {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Auto-detect mobile mode
+  useEffect(() => {
+    const checkMobile = () => {
+      setMobileMode(window.innerWidth < 768);
+    };
+    checkMobile(); // Initial check
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [setMobileMode]);
 
   // Load global API config on login
   useEffect(() => {
@@ -125,23 +137,25 @@ export default function App() {
       ) : (
         <>
           <main className="h-screen flex flex-col">
-            <header className="flex-none px-6 py-4 flex justify-between items-center bg-white/30 backdrop-blur-sm border-b border-white/20 sticky top-0 z-20">
-              <div className="flex items-center gap-3">
+            <header className="flex-none px-4 py-3 md:px-6 md:py-4 flex justify-between items-center bg-white/30 backdrop-blur-sm border-b border-white/20 sticky top-0 z-20">
+              <div className="flex items-center gap-2 md:gap-3">
                 {!isFocusModeActive && (
                   <button 
                     onClick={() => setCurrentBookId(null)}
-                    className="p-2 -ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                    className="p-1.5 md:p-2 -ml-1 md:-ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
                     title="返回书架"
                   >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={20} className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 )}
-                <h1 className="text-lg font-serif italic tracking-wide text-stone-500">
-                  Focus Reader
-                </h1>
+                {!mobileMode && (
+                  <h1 className="text-base md:text-lg font-serif italic tracking-wide text-stone-500">
+                    Focus Reader
+                  </h1>
+                )}
               </div>
-              <div className="text-xs text-stone-400 font-mono bg-white/40 px-2 py-1 rounded-full border border-white/50">
-                {lines.filter(l => l.isRead).length} / {lines.length} 已读
+              <div className="text-[10px] md:text-xs text-stone-400 font-mono bg-white/40 px-2 py-1 rounded-full border border-white/50">
+                {lines.filter(l => l.isRead).length} / {lines.length} {!mobileMode && '已读'}
               </div>
             </header>
             <Reader />

@@ -12,7 +12,10 @@ import {
   Star,
   Eye,
   FileText,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  Smartphone,
+  Download,
+  Maximize
 } from 'lucide-react';
 import { useReaderStore } from '../../store/useReaderStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -20,9 +23,10 @@ import { useAuthStore } from '../../store/useAuthStore';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenExport?: () => void;
 }
 
-export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
+export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalProps) => {
   const {
     fontSize,
     setFontSize,
@@ -42,12 +46,26 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     toggleGlobalNoteMode,
     infiniteScrollMode,
     toggleInfiniteScrollMode,
+    mobileMode,
+    toggleMobileMode,
+    smartFontSize,
+    toggleSmartFontSize,
     reset
   } = useReaderStore();
   
   const { signOut } = useAuthStore();
 
   const [confirmingReset, setConfirmingReset] = React.useState(false);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const handleReset = () => {
     if (confirmingReset) {
@@ -85,10 +103,13 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-white/90 backdrop-blur-xl shadow-2xl rounded-2xl border border-white/50 overflow-hidden pointer-events-auto mx-4"
+              className={cn(
+                "bg-white/90 backdrop-blur-xl shadow-2xl border border-white/50 overflow-hidden pointer-events-auto flex flex-col",
+                mobileMode ? "w-full h-full rounded-none" : "w-full max-w-md rounded-2xl mx-4 max-h-[90vh]"
+              )}
             >
               {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-stone-100">
+              <div className="flex justify-between items-center p-6 border-b border-stone-100 flex-shrink-0">
                 <h2 className="text-xl font-serif italic text-stone-800 flex items-center gap-2">
                   <RotateCcw size={18} className="text-stone-400" />
                   阅读设置
@@ -102,7 +123,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-8 max-h-[60vh] overflow-y-auto">
+              <div className="p-6 space-y-8 overflow-y-auto flex-1">
                 {/* Font Size */}
                 <section>
                   <div className="flex justify-between mb-3">
@@ -166,29 +187,73 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </div>
                 </section>
 
-                {/* Infinite Scroll Mode Toggle */}
+                {/* Smart Font Size Toggle */}
                 <section>
                   <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
                     <div className="flex items-center gap-3">
-                      <InfinityIcon size={16} className="text-stone-400" />
-                      <span className="text-sm font-medium text-stone-600">无限滚动模式</span>
+                      <Type size={16} className="text-stone-400" />
+                      <span className="text-sm font-medium text-stone-600">智能字体大小</span>
                     </div>
                     <button
-                      onClick={toggleInfiniteScrollMode}
+                      onClick={toggleSmartFontSize}
                       className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        infiniteScrollMode ? 'bg-stone-700' : 'bg-stone-200'
+                        smartFontSize ? 'bg-stone-700' : 'bg-stone-200'
                       }`}
                     >
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        infiniteScrollMode ? 'left-7' : 'left-1'
+                        smartFontSize ? 'left-7' : 'left-1'
                       }`} />
                     </button>
                   </div>
-                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，所有内容将在同一页显示，无需翻页。</p>
+                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，字体大小会根据本句内容的多少自动调整，大约填充屏幕的4/5。</p>
                 </section>
 
+                {/* Mobile Mode Toggle */}
+                <section>
+                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                    <div className="flex items-center gap-3">
+                      <Smartphone size={16} className="text-stone-400" />
+                      <span className="text-sm font-medium text-stone-600">手机模式</span>
+                    </div>
+                    <button
+                      onClick={toggleMobileMode}
+                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        mobileMode ? 'bg-stone-700' : 'bg-stone-200'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        mobileMode ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，一页仅显示一句话，并居中显示，适合手机阅读。</p>
+                </section>
+
+                {/* Infinite Scroll Mode Toggle */}
+                {!mobileMode && (
+                  <section>
+                    <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                      <div className="flex items-center gap-3">
+                        <InfinityIcon size={16} className="text-stone-400" />
+                        <span className="text-sm font-medium text-stone-600">无限滚动模式</span>
+                      </div>
+                      <button
+                        onClick={toggleInfiniteScrollMode}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          infiniteScrollMode ? 'bg-stone-700' : 'bg-stone-200'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          infiniteScrollMode ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，所有内容将在同一页显示，无需翻页。</p>
+                  </section>
+                )}
+
                 {/* Lines Per Page */}
-                {!infiniteScrollMode && (
+                {!infiniteScrollMode && !mobileMode && (
                   <section>
                     <div className="flex justify-between mb-3">
                       <label className="text-sm font-medium text-stone-600">每页行数</label>
@@ -210,28 +275,30 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 )}
 
                 {/* Show Notes Toggle */}
-                <section>
-                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
-                    <div className="flex items-center gap-3">
-                      <PenTool size={16} className="text-stone-400" />
-                      <span className="text-sm font-medium text-stone-600">显示随笔区</span>
+                {!mobileMode && (
+                  <section>
+                    <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                      <div className="flex items-center gap-3">
+                        <PenTool size={16} className="text-stone-400" />
+                        <span className="text-sm font-medium text-stone-600">显示随笔区</span>
+                      </div>
+                      <button
+                        onClick={toggleShowNotes}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          showNotes ? 'bg-stone-700' : 'bg-stone-200'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          showNotes ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
                     </div>
-                    <button
-                      onClick={toggleShowNotes}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        showNotes ? 'bg-stone-700' : 'bg-stone-200'
-                      }`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        showNotes ? 'left-7' : 'left-1'
-                      }`} />
-                    </button>
-                  </div>
-                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，鼠标悬浮在行右侧即可输入随笔。</p>
-                </section>
+                    <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，鼠标悬浮在行右侧即可输入随笔。</p>
+                  </section>
+                )}
 
                 {/* Global Note Mode Toggle */}
-                {showNotes && (
+                {showNotes && !mobileMode && (
                   <section>
                     <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
                       <div className="flex items-center gap-3">
@@ -294,10 +361,53 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </div>
                   <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，已读的行左侧会显示四角星标记。</p>
                 </section>
+
+                {/* Mobile Fullscreen Toggle */}
+                {mobileMode && (
+                  <section>
+                    <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+                      <div className="flex items-center gap-3">
+                        <Maximize size={16} className="text-stone-400" />
+                        <span className="text-sm font-medium text-stone-600">全屏模式</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            if (!document.fullscreenElement) {
+                              await document.documentElement.requestFullscreen();
+                            } else {
+                              if (document.exitFullscreen) {
+                                await document.exitFullscreen();
+                              }
+                            }
+                          } catch (err) {
+                            console.error("Error attempting to toggle fullscreen:", err);
+                          }
+                        }}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                          isFullscreen ? 'bg-stone-700' : 'bg-stone-200'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          isFullscreen ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                  </section>
+                )}
               </div>
 
               {/* Footer / Danger Zone */}
-              <div className="p-6 border-t border-stone-100 bg-stone-50/50 space-y-3">
+              <div className="p-6 border-t border-stone-100 bg-stone-50/50 space-y-3 flex-shrink-0">
+                {mobileMode && onOpenExport && (
+                  <button
+                    onClick={() => { onClose(); onOpenExport(); }}
+                    className="w-full py-3 px-4 bg-white text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm cursor-pointer active:scale-[0.98]"
+                  >
+                    <Download size={16} />
+                    导出内容
+                  </button>
+                )}
                 <button
                   onClick={handleReset}
                   className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border shadow-sm cursor-pointer active:scale-[0.98] ${
