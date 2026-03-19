@@ -31,10 +31,9 @@ interface ReaderState {
   globalNote: string;
   infiniteScrollMode: boolean;
   mobileMode: boolean;
-  smartFontSize: boolean;
   mobileNavVisible: boolean;
   isNotesReviewOpen: boolean;
-  
+
   // Actions
   setCurrentBookId: (id: string | null) => void;
   setRawText: (text: string) => void;
@@ -53,18 +52,13 @@ interface ReaderState {
   setGlobalNote: (note: string) => void;
   toggleInfiniteScrollMode: () => void;
   toggleMobileMode: () => void;
-  toggleSmartFontSize: () => void;
-  setMobileMode: (isMobile: boolean) => void;
-  setMobileNavVisible: (visible: boolean) => void;
-  setIsNotesReviewOpen: (isOpen: boolean) => void;
-  
   // Interaction Actions
   toggleLineRead: (id: string) => void;
   markLineAsRead: (id: string) => void;
   toggleLineConfusing: (id: string) => void;
   toggleLineHighlight: (id: string) => void;
   updateLineNote: (id: string, note: string) => void;
-  
+
   // System Actions
   reset: () => void;
   
@@ -107,7 +101,6 @@ export const useReaderStore = create<ReaderState>()(
       globalNote: '',
       infiniteScrollMode: false,
       mobileMode: false,
-      smartFontSize: false,
       mobileNavVisible: false,
       isNotesReviewOpen: false,
       
@@ -147,7 +140,6 @@ export const useReaderStore = create<ReaderState>()(
       setGlobalNote: (note) => set({ globalNote: note }),
       toggleInfiniteScrollMode: () => set((state) => ({ infiniteScrollMode: !state.infiniteScrollMode })),
       toggleMobileMode: () => set((state) => ({ mobileMode: !state.mobileMode })),
-      toggleSmartFontSize: () => set((state) => ({ smartFontSize: !state.smartFontSize })),
       setMobileMode: (isMobile) => set({ mobileMode: isMobile }),
       setMobileNavVisible: (visible) => set({ mobileNavVisible: visible }),
       setIsNotesReviewOpen: (isOpen) => set({ isNotesReviewOpen: isOpen }),

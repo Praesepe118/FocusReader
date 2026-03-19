@@ -140,13 +140,19 @@ export const Reader = () => {
       const nextPageStart = (currentPage + 1) * effectiveLinesPerPage;
       if (nextPageStart < lines.length) {
          setCurrentLineIndex(nextPageStart);
+      } else if (infiniteScrollMode || mobileMode) {
+          const nextIndex = Math.min(lines.length - 1, currentLineIndex + 1);
+          setCurrentLineIndex(nextIndex);
       }
-    } 
+    }
     // Swipe right (prev)
     else if (diffX < -50 && Math.abs(diffX) > Math.abs(diffY)) {
       const prevPageStart = (currentPage - 1) * effectiveLinesPerPage;
       if (prevPageStart >= 0) {
          setCurrentLineIndex(prevPageStart);
+      } else if (infiniteScrollMode || mobileMode) {
+          const prevIndex = Math.max(0, currentLineIndex - 1);
+          setCurrentLineIndex(prevIndex);
       }
     }
     touchStartX.current = null;
@@ -155,9 +161,13 @@ export const Reader = () => {
 
   const handleContainerClick = (e: React.MouseEvent) => {
     // Ignore clicks on interactive elements like buttons
-    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input') || (e.target as HTMLElement).closest('textarea') || (e.target as HTMLElement).closest('.group')) {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('.group\\/note') || target.closest('.group\\/global-note')) {
       return;
     }
+
+    // Allow clicks on paragraph text itself to propagate to container for navigation
+    // This removes the restriction that only clicking blank space triggers navigation
 
     // Ignore if text is selected
     if (window.getSelection()?.toString()) {
@@ -166,15 +176,19 @@ export const Reader = () => {
 
     const screenWidth = window.innerWidth;
     const clickX = e.clientX;
+    const navZoneWidth = screenWidth / 3;
 
-    if (clickX < screenWidth * 0.25) {
-      // Clicked left 25%
+    if (clickX < navZoneWidth) {
+      // Clicked left zone
       const prevPageStart = (currentPage - 1) * effectiveLinesPerPage;
       if (prevPageStart >= 0) {
          setCurrentLineIndex(prevPageStart);
+      } else if (infiniteScrollMode) {
+          const prevIndex = Math.max(0, currentLineIndex - 1);
+          setCurrentLineIndex(prevIndex);
       }
-    } else if (clickX > screenWidth * 0.75) {
-      // Clicked right 25%
+    } else if (clickX > screenWidth - navZoneWidth) {
+      // Clicked right zone
       // Mark current line as read before moving to next
       const currentLine = lines[currentLineIndex];
       if (currentLine && !currentLine.isRead) {
@@ -184,6 +198,9 @@ export const Reader = () => {
       const nextPageStart = (currentPage + 1) * effectiveLinesPerPage;
       if (nextPageStart < lines.length) {
          setCurrentLineIndex(nextPageStart);
+      } else if (infiniteScrollMode) {
+          const nextIndex = Math.min(lines.length - 1, currentLineIndex + 1);
+          setCurrentLineIndex(nextIndex);
       }
     }
   };
@@ -198,16 +215,16 @@ export const Reader = () => {
       onClick={handleContainerClick}
     >
       {/* Main Content Area */}
-      <div 
+      <div
         ref={containerRef}
         className={cn(
-          "flex-1 overflow-y-auto px-4 scroll-smooth no-scrollbar transition-all duration-300 flex flex-col",
+          "flex-1 overflow-y-auto px-4 scroll-smooth no-scrollbar transition-all duration-300 flex flex-col relative z-0",
           mobileMode ? "py-4" : "py-8 pt-20"
         )}
       >
         <div className={cn(
-          "w-full relative flex-1 flex flex-col",
-          mobileMode ? "justify-center items-center min-h-[60vh]" : "min-h-[60vh] pb-32"
+          "w-full relative flex-1 flex flex-col pointer-events-none px-4",
+          mobileMode ? "items-center" : "min-h-[60vh] pb-8"
         )}>
           <AnimatePresence mode='wait'>
             <motion.div
@@ -217,14 +234,14 @@ export const Reader = () => {
               exit={{ opacity: 0, y: mobileMode ? -10 : 0 }}
               transition={{ duration: 0.3 }}
               className={cn(
-                "relative z-0 w-full",
-                mobileMode ? "max-w-lg text-center my-auto" : "space-y-8"
+                "relative z-0 w-full pointer-events-auto flex-none",
+                mobileMode ? "max-w-lg text-center my-auto" : "space-y-8 pb-16"
               )}
             >
               {visibleLines.map((line, index) => {
                 const globalIndex = startLineIndex + index;
                 const isActive = globalIndex === currentLineIndex;
-                
+
                 return (
                   <ReaderLine
                     key={line.id}
@@ -255,15 +272,22 @@ export const Reader = () => {
               </div>
             </div>
           )}
+
+          {mobileMode && <div className="flex-none h-4" />}
+
+          {/* Pagination - Move INSIDE the relative wrapper so it's guaranteed to be seen at the bottom of the content */}
+          {(!infiniteScrollMode && !mobileMode) && (
+            <div className="flex-none mt-16 pb-16 z-50 pointer-events-auto w-full">
+              <ReaderPagination />
+            </div>
+          )}
         </div>
-        
-        {(!infiniteScrollMode || mobileMode) && <ReaderPagination />}
-        
+
         {!mobileMode && <div className="h-24" />}
       </div>
 
       <ReadingProgress onOpenNotes={() => setIsNotesReviewOpen(true)} />
-      <PageTurnEffect trigger={pageTurnTrigger} />
+      {!mobileMode && <PageTurnEffect trigger={pageTurnTrigger} />}
       <NotesReviewModal isOpen={isNotesReviewOpen} onClose={() => setIsNotesReviewOpen(false)} />
       <ZenTimer />
       <AIChatSidebar />

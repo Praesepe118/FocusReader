@@ -76,7 +76,7 @@ export default function App() {
       } catch (error) {
         console.error('Failed to sync to cloud:', error);
       }
-    }, 2000); // Debounce for 2 seconds
+    }, 5 * 60 * 1000); // Debounce for 5 minutes
 
     return () => {
       if (syncTimeoutRef.current) {
@@ -138,14 +138,17 @@ export default function App() {
         <>
           <main className="h-screen flex flex-col">
             <header className="flex-none px-4 py-3 md:px-6 md:py-4 flex justify-between items-center bg-white/30 backdrop-blur-sm border-b border-white/20 sticky top-0 z-20">
-              <div className="flex items-center gap-2 md:gap-3">
+              <div className="flex items-center gap-2 md:gap-3 z-50">
                 {!isFocusModeActive && (
-                  <button 
-                    onClick={() => setCurrentBookId(null)}
-                    className="p-1.5 md:p-2 -ml-1 md:-ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                  <button
+                    onClick={() => {
+                      setCurrentBookId(null);
+                      useReaderStore.getState().reset();
+                    }}
+                    className="p-1.5 md:p-2 -ml-1 md:-ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors relative z-50 cursor-pointer"
                     title="返回书架"
                   >
-                    <ArrowLeft size={20} className="w-4 h-4 md:w-5 md:h-5" />
+                    <ArrowLeft size={20} className="w-4 h-4 md:w-5 md:h-5 pointer-events-none" />
                   </button>
                 )}
                 {!mobileMode && (

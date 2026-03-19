@@ -11,7 +11,7 @@ interface ReadingProgressProps {
 }
 
 export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes }) => {
-  const { lines, startTimer, cancelTimer, timerState, timerEndTime, totalFocusTime, isFocusModeActive } = useReaderStore();
+  const { lines, startTimer, cancelTimer, timerState, timerEndTime, totalFocusTime, isFocusModeActive, currentLineIndex, mobileMode, setCurrentLineIndex } = useReaderStore();
   const [isHovered, setIsHovered] = useState(false);
   const [showTimerSettings, setShowTimerSettings] = useState(false);
   const [showFocusSetup, setShowFocusSetup] = useState(false);
@@ -19,8 +19,9 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
 
   const readLines = lines.filter(l => l.isRead);
   const totalLines = lines.length;
-  const progress = totalLines > 0 ? (readLines.length / totalLines) * 100 : 0;
-  
+  // In mobile mode, use currentLineIndex for progress, otherwise use readLines
+  const progress = totalLines > 0 ? (mobileMode ? (currentLineIndex / (totalLines - 1)) * 100 : (readLines.length / totalLines) * 100) : 0;
+
   const readChars = readLines.reduce((acc, line) => acc + line.text.length, 0);
 
   // Calculate stars: 1 star for every 10% progress, max 10 stars.
@@ -32,6 +33,19 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
   const handleStartTimer = (minutes: number) => {
     startTimer(minutes);
     setShowTimerSettings(false);
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mobileMode || totalLines === 0) return;
+
+    // Calculate click position as a percentage
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+
+    // Map percentage to a line index
+    const targetIndex = Math.floor(percentage * (totalLines - 1));
+    setCurrentLineIndex(targetIndex);
   };
 
   // Timer countdown effect
@@ -64,9 +78,11 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
     return `${hrs}小时${mins}分钟`;
   };
 
+  if (mobileMode) return null;
+
   return (
     <>
-      <div 
+      <div
         className={cn(
           "fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center justify-end transition-all duration-500 ease-out",
           isHovered ? "h-auto py-6 bg-white/90 backdrop-blur-md border-t border-stone-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]" : "h-1.5 bg-transparent"
@@ -78,11 +94,14 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
         }}
       >
         {/* The Trigger Line (Always visible as a thin hint) */}
-        <div className={cn(
-          "absolute top-0 left-0 right-0 h-1.5 transition-all duration-300",
-          isHovered ? "opacity-0" : "bg-stone-200/50 hover:bg-amber-200/50 cursor-pointer"
-        )}>
-          <motion.div 
+        <div
+          className={cn(
+            "absolute top-0 left-0 right-0 h-1.5 transition-all duration-300",
+            isHovered ? "opacity-0" : "bg-stone-200/50 hover:bg-amber-200/50 cursor-pointer"
+          )}
+          onClick={handleProgressClick}
+        >
+          <motion.div
             className="h-full bg-amber-400/50"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -118,9 +137,12 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
               </div>
 
               {/* Progress Bar (Expanded) */}
-              <div className="relative w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                  <motion.div 
-                  className="absolute top-0 bottom-0 left-0 bg-amber-400"
+              <div
+                className="relative w-full h-1.5 bg-stone-100 rounded-full overflow-hidden cursor-pointer"
+                onClick={handleProgressClick}
+              >
+                  <motion.div
+                  className="absolute top-0 bottom-0 left-0 bg-amber-400 pointer-events-none"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ type: 'spring', stiffness: 50, damping: 20 }}
@@ -130,8 +152,17 @@ export const ReadingProgress: React.FC<ReadingProgressProps> = ({ onOpenNotes })
               {/* Stats & Controls */}
               <div className="flex flex-col sm:flex-row items-center justify-between w-full text-xs font-serif text-stone-500 relative gap-4">
                   <div className="flex flex-wrap items-center justify-center gap-4">
-                      <span><span className="font-mono text-stone-800 text-sm">{readChars}</span> 字</span>
-                      <span><span className="font-mono text-stone-800 text-sm">{Math.round(progress)}%</span> 完成</span>
+                      {mobileMode ? (
+                        <>
+                          <span><span className="font-mono text-stone-800 text-sm">{currentLineIndex + 1}</span> / {totalLines} 句</span>
+                          <span><span className="font-mono text-stone-800 text-sm">{Math.round(progress)}%</span> 进度</span>
+                        </>
+                      ) : (
+                        <>
+                          <span><span className="font-mono text-stone-800 text-sm">{readChars}</span> 字</span>
+                          <span><span className="font-mono text-stone-800 text-sm">{Math.round(progress)}%</span> 完成</span>
+                        </>
+                      )}
                       <span className="flex items-center gap-1 text-stone-400">
                           <Hourglass size={10} />
                           <span>专注 <span className="font-mono text-stone-600">{formatFocusTime(totalFocusTime)}</span></span>

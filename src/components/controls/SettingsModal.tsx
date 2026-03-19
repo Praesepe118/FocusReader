@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Type, 
-  AlignJustify, 
+import { cn } from '../../lib/utils';
+import {
+  Type,
+  AlignJustify,
   MoveHorizontal, 
   Trash2, 
   X,
@@ -48,8 +49,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
     toggleInfiniteScrollMode,
     mobileMode,
     toggleMobileMode,
-    smartFontSize,
-    toggleSmartFontSize,
     reset
   } = useReaderStore();
   
@@ -97,7 +96,10 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
           />
           
           {/* Modal Container */}
-          <div className="fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none">
+          <div className={cn(
+            "fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none",
+            mobileMode ? "p-0" : "p-4"
+          )}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -105,16 +107,16 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
                 "bg-white/90 backdrop-blur-xl shadow-2xl border border-white/50 overflow-hidden pointer-events-auto flex flex-col",
-                mobileMode ? "w-full h-full rounded-none" : "w-full max-w-md rounded-2xl mx-4 max-h-[90vh]"
+                mobileMode ? "w-full h-full rounded-none" : "w-full max-w-md rounded-2xl max-h-[90vh]"
               )}
             >
               {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-stone-100 flex-shrink-0">
+              <div className="flex justify-between items-center p-6 border-b border-stone-100 flex-shrink-0 bg-white">
                 <h2 className="text-xl font-serif italic text-stone-800 flex items-center gap-2">
                   <RotateCcw size={18} className="text-stone-400" />
                   阅读设置
                 </h2>
-                <button 
+                <button
                   onClick={onClose}
                   className="p-2 hover:bg-stone-100 rounded-full text-stone-400 transition-colors cursor-pointer"
                 >
@@ -123,7 +125,7 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-8 overflow-y-auto flex-1">
+              <div className="p-6 space-y-8 overflow-y-auto flex-1 bg-white/50">
                 {/* Font Size */}
                 <section>
                   <div className="flex justify-between mb-3">
@@ -135,7 +137,7 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
                     <input
                       type="range"
                       min="14"
-                      max="32"
+                      max="60"
                       step="1"
                       value={fontSize}
                       onChange={(e) => setFontSize(Number(e.target.value))}
@@ -185,27 +187,6 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
                     />
                     <MoveHorizontal size={20} className="text-stone-500" />
                   </div>
-                </section>
-
-                {/* Smart Font Size Toggle */}
-                <section>
-                  <div className="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
-                    <div className="flex items-center gap-3">
-                      <Type size={16} className="text-stone-400" />
-                      <span className="text-sm font-medium text-stone-600">智能字体大小</span>
-                    </div>
-                    <button
-                      onClick={toggleSmartFontSize}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        smartFontSize ? 'bg-stone-700' : 'bg-stone-200'
-                      }`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        smartFontSize ? 'left-7' : 'left-1'
-                      }`} />
-                    </button>
-                  </div>
-                  <p className="text-xs text-stone-400 mt-2 font-light px-1">开启后，字体大小会根据本句内容的多少自动调整，大约填充屏幕的4/5。</p>
                 </section>
 
                 {/* Mobile Mode Toggle */}
@@ -411,8 +392,8 @@ export const SettingsModal = ({ isOpen, onClose, onOpenExport }: SettingsModalPr
                 <button
                   onClick={handleReset}
                   className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 border shadow-sm cursor-pointer active:scale-[0.98] ${
-                    confirmingReset 
-                      ? "bg-red-500 text-white border-red-600 hover:bg-red-600" 
+                    confirmingReset
+                      ? "bg-red-500 text-white border-red-600 hover:bg-red-600"
                       : "bg-white text-stone-500 hover:text-red-500 hover:bg-red-50 border-stone-200 hover:border-red-100"
                   }`}
                 >

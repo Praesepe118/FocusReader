@@ -1,20 +1,23 @@
 import React from 'react';
 import { ExportModal } from './ExportModal';
 import { SettingsModal } from './controls/SettingsModal';
-import { 
-  Settings, 
+import {
+  Settings,
   Download,
   PenTool,
-  Sparkles
+  Sparkles,
+  AlignLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useReaderStore } from '../store/useReaderStore';
 import { useAIStore } from '../store/useAIStore';
 import { FullScreenToggle } from './reader/FullScreenToggle';
+import { MobileVerticalProgress } from './reader/MobileVerticalProgress';
 
 export const Controls = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isExportOpen, setIsExportOpen] = React.useState(false);
+  const [isMobileProgressOpen, setIsMobileProgressOpen] = React.useState(false);
   const { isFocusModeActive, mobileMode, mobileNavVisible, setMobileNavVisible, setIsNotesReviewOpen } = useReaderStore();
   const { setSidebarOpen } = useAIStore();
 
@@ -27,16 +30,19 @@ export const Controls = () => {
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
-              className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-stone-100/90 backdrop-blur-xl p-2 rounded-2xl shadow-2xl border border-stone-200/50 z-50"
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-stone-100/90 backdrop-blur-xl p-2 rounded-2xl shadow-2xl border border-stone-200/50 z-50"
             >
-              <button onClick={() => { setIsNotesReviewOpen(true); setMobileNavVisible(false); }} className="p-4 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><PenTool size={20}/><span className="text-[10px]">笔记</span></button>
+              <button onClick={() => { setIsNotesReviewOpen(true); setMobileNavVisible(false); }} className="p-3 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><PenTool size={20}/><span className="text-[10px]">笔记</span></button>
               <div className="w-[1px] h-8 bg-stone-300/50" />
-              <button onClick={() => { setSidebarOpen(true); setMobileNavVisible(false); }} className="p-4 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><Sparkles size={20}/><span className="text-[10px]">AI</span></button>
+              <button onClick={() => { setSidebarOpen(true); setMobileNavVisible(false); }} className="p-3 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><Sparkles size={20}/><span className="text-[10px]">AI</span></button>
               <div className="w-[1px] h-8 bg-stone-300/50" />
-              <button onClick={() => { setIsOpen(true); setMobileNavVisible(false); }} className="p-4 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><Settings size={20}/><span className="text-[10px]">设置</span></button>
+              <button onClick={() => { setIsMobileProgressOpen(!isMobileProgressOpen); }} className={`p-3 rounded-xl flex flex-col items-center gap-1 ${isMobileProgressOpen ? 'text-amber-600 bg-amber-50' : 'text-stone-600 hover:bg-white/50'}`}><AlignLeft size={20}/><span className="text-[10px]">进度</span></button>
+              <div className="w-[1px] h-8 bg-stone-300/50" />
+              <button onClick={() => { setIsOpen(true); setMobileNavVisible(false); }} className="p-3 text-stone-600 hover:bg-white/50 rounded-xl flex flex-col items-center gap-1"><Settings size={20}/><span className="text-[10px]">设置</span></button>
             </motion.div>
           )}
         </AnimatePresence>
+        {isMobileProgressOpen && <MobileVerticalProgress />}
         <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
         <SettingsModal isOpen={isOpen} onClose={() => setIsOpen(false)} onOpenExport={() => setIsExportOpen(true)} />
       </>

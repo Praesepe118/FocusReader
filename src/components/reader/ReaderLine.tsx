@@ -13,12 +13,12 @@ interface ReaderLineProps {
 }
 
 export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isActive }) => {
-  const { 
-    fontSize, 
-    lineHeight, 
-    letterSpacing, 
-    setCurrentLineIndex, 
-    toggleLineConfusing, 
+  const {
+    fontSize,
+    lineHeight,
+    letterSpacing,
+    setCurrentLineIndex,
+    toggleLineConfusing,
     toggleLineHighlight,
     markLineAsRead,
     toggleLineRead,
@@ -27,8 +27,7 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
     showReadStar,
     browseMode,
     globalNoteMode,
-    mobileMode,
-    smartFontSize
+    mobileMode
   } = useReaderStore();
 
   const { isSidebarPinned, toggleLineSelection, selectedLineIds } = useAIStore();
@@ -42,26 +41,12 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
   useEffect(() => {
     const calculateFontSize = () => {
       const isFullscreen = !!document.fullscreenElement;
-      
-      if (smartFontSize) {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        // Adjust target area based on mobile mode to avoid overflowing horizontally
-        const targetArea = screenWidth * screenHeight * (mobileMode ? 0.6 : 0.8); 
-        const textLength = Math.max(line.text.length, 10);
-        
-        let calculatedSize = Math.sqrt(targetArea / textLength);
-        // Reduce size slightly to account for line height and letter spacing
-        calculatedSize = calculatedSize * 0.8;
-        calculatedSize = Math.max(16, Math.min(calculatedSize, 80)); // Clamp
-        setComputedFontSize(calculatedSize);
-      } else {
-        let baseSize = mobileMode ? Math.max(fontSize, 20) : fontSize;
-        if (isFullscreen) {
-          baseSize = Math.min(baseSize * 1.5, 48); // Increase by 50%, max 48
-        }
-        setComputedFontSize(baseSize);
+
+      let baseSize = mobileMode ? Math.max(fontSize, 20) : fontSize;
+      if (isFullscreen) {
+        baseSize = Math.min(baseSize * 1.5, 48); // Increase by 50%, max 48
       }
+      setComputedFontSize(baseSize);
     };
 
     calculateFontSize();
@@ -71,7 +56,7 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
       window.removeEventListener('resize', calculateFontSize);
       document.removeEventListener('fullscreenchange', calculateFontSize);
     };
-  }, [smartFontSize, fontSize, mobileMode, line.text.length]);
+  }, [fontSize, mobileMode, line.text.length]);
 
   const handleMouseEnter = () => {
     if (!line.isRead && !mobileMode) {
@@ -143,11 +128,16 @@ export const ReaderLine: React.FC<ReaderLineProps> = ({ line, globalIndex, isAct
       exit={{ opacity: 0 }}
       className={cn(
         "group relative items-start w-full mx-auto",
-        mobileMode 
-          ? "flex flex-col items-center justify-center min-h-[50vh] gap-8 px-4" 
+        mobileMode
+          ? "flex flex-col items-center justify-center min-h-[10vh] gap-8 px-4 py-0"
           : "grid grid-cols-[1fr_minmax(auto,65ch)_1fr] gap-4 max-w-[1600px]"
       )}
-      onClick={() => setCurrentLineIndex(globalIndex)}
+      onClick={(e) => {
+        // Only set current line on desktop, let event bubble to container for mobile navigation
+        if (!mobileMode) {
+          setCurrentLineIndex(globalIndex);
+        }
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
